@@ -39,8 +39,8 @@ SECRET_KEY = 'django-insecure-fv@!-bs_yfk2!)c!8%$=qvhyxd)yfbo4z6cz&(eo@v6p2es7@6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
-
+ALLOWED_HOSTS = ['bbu-d104-g1.thavrak-lab.xyz']
+CSRF_TRUSTED_ORIGINS = ['https://bbu-d104-g1.thavrak-lab.xyz']
 
 
 # Application definition
