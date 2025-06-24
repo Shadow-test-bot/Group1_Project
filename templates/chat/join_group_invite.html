@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Join Group - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-users fa-4x text-primary mb-3"></i>
+                        <h2 class="card-title">Join Group Chat</h2>
+                    </div>
+                    
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        You've been invited to join
+                    </div>
+                    
+                    <h3 class="text-primary mb-3">{{ group.name }}</h3>
+                    
+                    <div class="mb-4">
+                        <p class="text-muted">
+                            <i class="fas fa-user-friends mr-2"></i>
+                            {{ group.members.count }} member{{ group.members.count|pluralize }}
+                        </p>
+                        <p class="text-muted">
+                            <i class="fas fa-calendar mr-2"></i>
+                            Created {{ group.created_at|date:"M d, Y" }}
+                        </p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-lg mb-3">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Join Group
+                        </button>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'group_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Back to Groups
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.card-body {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 15px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #8B7CF8 0%, #A855F7 100%);
+    border: none;
+    border-radius: 25px;
+    padding: 12px 30px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(139, 124, 248, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 124, 248, 0.4);
+    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
+}
+
+.btn-secondary {
+    border-radius: 25px;
+    padding: 10px 25px;
+    font-weight: 500;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #E0F2FE 0%, #F0F9FF 100%);
+    border: 1px solid #BAE6FD;
+    border-radius: 10px;
+}
+
+.text-primary {
+    color: #8B7CF8 !important;
+}
+
+.fa-users {
+    color: #8B7CF8;
+}
+</style>
+{% endblock %}

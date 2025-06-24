@@ -1,0 +1,548 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ group.name }} - Group Chat{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100">
+    <div class="row h-100">
+        <!-- Group Info Sidebar -->
+        <div class="col-3 group-sidebar">
+            <div class="group-header">
+                <h5><i class="fas fa-users mr-2"></i>{{ group.name }}</h5>
+                <p class="text-muted">{{ group.members.count }} member{{ group.members.count|pluralize }}</p>
+            </div>
+            
+            <!-- Invite Section -->
+            <div class="invite-section">
+                <h6><i class="fas fa-user-plus mr-2"></i>Invite Others</h6>
+                <div class="mb-3">
+                    <button class="btn btn-primary btn-sm btn-block" onclick="generateInviteLink()">
+                        <i class="fas fa-link mr-2"></i>Get Invite Link
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <button class="btn btn-success btn-sm btn-block" onclick="showInviteUserModal()">
+                        <i class="fas fa-envelope mr-2"></i>Send to User
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Members List -->
+            <div class="members-section">
+                <h6><i class="fas fa-users mr-2"></i>Members</h6>
+                <div class="members-list">
+                    {% for member in group.members.all %}
+                    <div class="member-item d-flex align-items-center mb-2">
+                        {% if member.profile.profile_pic %}
+                            <img src="{{ member.profile.profile_pic.url }}" 
+                                 alt="{{ member.username }}"
+                                 class="member-avatar mr-2">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ member.username|urlencode }}&size=32&background=random&color=fff&bold=true"
+                                 alt="{{ member.username }}"
+                                 class="member-avatar mr-2">
+                        {% endif %}
+                        <span class="member-name">{{ member.username }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="mt-auto">
+                <a href="{% url 'group_list' %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Groups
+                </a>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="col-9 d-flex flex-column group-chat">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <h4><i class="fas fa-users mr-2"></i>{{ group.name }}</h4>
+                <div class="header-actions">
+                    <button class="btn btn-outline-light btn-sm" onclick="generateInviteLink()">
+                        <i class="fas fa-share-alt mr-1"></i>Share
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div class="messages-container flex-grow-1" id="chat-log">
+                {% for msg in chat_messages %}
+                    <div class="message-item">
+                        <div class="message-avatar">
+                            {% if msg.sender.profile.profile_pic %}
+                                <img src="{{ msg.sender.profile.profile_pic.url }}" 
+                                     alt="{{ msg.sender.username }}">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ msg.sender.username|urlencode }}&size=40&background=random&color=fff&bold=true"
+                                     alt="{{ msg.sender.username }}">
+                            {% endif %}
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <strong>{{ msg.sender.username }}</strong>
+                                <small class="text-muted">{{ msg.timestamp|date:"H:i" }}</small>
+                            </div>
+                            <div class="message-body">
+                                {{ msg.content|linebreaks }}
+                                {% if msg.attachment %}
+                                    <div class="message-attachment">
+                                        {% if msg.attachment.url|slice:"-4:" in ".jpg.jpeg.png.gif.webp" %}
+                                            <img src="{{ msg.attachment.url }}" alt="attachment">
+                                        {% else %}
+                                            <a href="{{ msg.attachment.url }}" target="_blank">
+                                                <i class="fas fa-paperclip mr-2"></i>Download Attachment
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Message Input -->
+            <div class="message-input-container">
+                <form id="chat-form" class="d-flex align-items-center">
+                    {% csrf_token %}
+                    <input type="file" id="chat-file-input" style="display: none;">
+                    <button type="button" class="btn btn-outline-secondary mr-2" onclick="document.getElementById('chat-file-input').click()">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="text" id="chat-message-input" class="form-control mr-2" placeholder="Type a message...">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invite User Modal -->
+<div class="modal fade" id="inviteUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus mr-2"></i>Invite User to {{ group.name }}
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="inviteUserForm">
+                    <div class="form-group">
+                        <label for="targetUsername">Username</label>
+                        <input type="text" class="form-control" id="targetUsername" 
+                               placeholder="Enter username to invite" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="inviteMessage">Personal Message (optional)</label>
+                        <textarea class="form-control" id="inviteMessage" rows="3" 
+                                  placeholder="Add a personal message to your invitation..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendUserInvite()">
+                    <i class="fas fa-envelope mr-2"></i>Send Invitation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invite Link Modal -->
+<div class="modal fade" id="inviteLinkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-link mr-2"></i>Group Invitation Link
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Share this link with others to invite them to join {{ group.name }}:</p>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="inviteLink" readonly>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyInviteLink()">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+                <small class="text-muted">This link will allow anyone to join the group.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --primary-bg: linear-gradient(135deg, #8B7CF8 0%, #A855F7 100%);
+    --secondary-bg: linear-gradient(135deg, #8B7CF8 0%, #A855F7 25%, #C084FC 50%, #DDD6FE 75%, #8B7CF8 100%);
+    --accent-color: #8B7CF8;
+    --text-primary: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.15);
+}
+
+body {
+    background: var(--primary-bg);
+    height: 100vh;
+    overflow: hidden;
+}
+
+.group-sidebar {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    padding: 20px;
+    border-right: 1px solid var(--border-color);
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    max-height: 100vh;
+    overflow-y: auto;
+}
+
+.group-header h5 {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.invite-section, .members-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.invite-section h6, .members-section h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.member-name {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.group-chat {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+}
+
+.chat-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    color: var(--text-primary);
+}
+
+.chat-header h4 {
+    color: var(--text-primary);
+    margin: 0;
+    flex-grow: 1;
+}
+
+.messages-container {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+}
+
+.message-item {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.message-avatar img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.message-content {
+    margin-left: 15px;
+    flex-grow: 1;
+}
+
+.message-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.message-header strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.message-body {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.4;
+}
+
+.message-attachment {
+    margin-top: 10px;
+}
+
+.message-attachment img {
+    max-width: 300px;
+    max-height: 200px;
+    border-radius: 8px;
+}
+
+.message-attachment a {
+    color: #A855F7;
+    text-decoration: none;
+    padding: 8px 12px;
+    background: rgba(168, 85, 247, 0.1);
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.message-input-container {
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    border: none;
+    border-radius: 20px;
+}
+
+.btn-primary:hover {
+    background: #7C3AED;
+    transform: translateY(-1px);
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 20px;
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(139, 124, 248, 0.3);
+    color: var(--text-primary);
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: none;
+    border-radius: 15px;
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 15px 15px 0 0;
+}
+
+.btn-outline-secondary {
+    border-color: var(--border-color);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-outline-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+</style>
+
+<script>
+const groupId = {{ group.id }};
+const chatLog = document.getElementById('chat-log');
+const chatForm = document.getElementById('chat-form');
+const chatMessageInput = document.getElementById('chat-message-input');
+
+// WebSocket connection
+const chatSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/group_chat/' + groupId + '/'
+);
+
+chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    addMessageToChat(data);
+    scrollToBottom();
+};
+
+chatSocket.onclose = function(e) {
+    console.error('Chat socket closed unexpectedly');
+};
+
+// Add message to chat
+function addMessageToChat(data) {
+    const messageHtml = `
+        <div class="message-item">
+            <div class="message-avatar">
+                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(data.sender)}&size=40&background=random&color=fff&bold=true"
+                     alt="${data.sender}">
+            </div>
+            <div class="message-content">
+                <div class="message-header">
+                    <strong>${data.sender}</strong>
+                    <small class="text-muted">${new Date().toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'})}</small>
+                </div>
+                <div class="message-body">
+                    ${data.message || ''}
+                    ${data.attachment ? `<div class="message-attachment">
+                        ${data.attachment.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? 
+                          `<img src="${data.attachment}" alt="attachment">` : 
+                          `<a href="${data.attachment}" target="_blank"><i class="fas fa-paperclip mr-2"></i>Download Attachment</a>`
+                        }
+                    </div>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    chatLog.innerHTML += messageHtml;
+}
+
+// Scroll to bottom
+function scrollToBottom() {
+    chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+// Form submission
+chatForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const message = chatMessageInput.value.trim();
+    const fileInput = document.getElementById('chat-file-input');
+    const file = fileInput.files[0];
+
+    if (!message && !file) return;
+
+    const payload = {
+        'message': message,
+        'attachment': null
+    };
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const fileData = event.target.result.split(',')[1];
+            payload.attachment = {
+                'name': file.name,
+                'data': fileData
+            };
+            chatSocket.send(JSON.stringify(payload));
+        };
+        reader.readAsDataURL(file);
+    } else {
+        chatSocket.send(JSON.stringify(payload));
+    }
+
+    chatMessageInput.value = '';
+    fileInput.value = '';
+});
+
+// Invitation functions
+function generateInviteLink() {
+    fetch(`/api/generate-group-invite-link/${groupId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('inviteLink').value = data.invite_link;
+                $('#inviteLinkModal').modal('show');
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to generate invite link');
+        });
+}
+
+function copyInviteLink() {
+    const inviteLinkInput = document.getElementById('inviteLink');
+    inviteLinkInput.select();
+    document.execCommand('copy');
+    
+    // Visual feedback
+    const copyBtn = event.target;
+    const originalText = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    copyBtn.classList.add('btn-success');
+    copyBtn.classList.remove('btn-outline-secondary');
+    
+    setTimeout(() => {
+        copyBtn.innerHTML = originalText;
+        copyBtn.classList.remove('btn-success');
+        copyBtn.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+function showInviteUserModal() {
+    $('#inviteUserModal').modal('show');
+}
+
+function sendUserInvite() {
+    const username = document.getElementById('targetUsername').value.trim();
+    const message = document.getElementById('inviteMessage').value.trim();
+    
+    if (!username) {
+        alert('Please enter a username');
+        return;
+    }
+    
+    fetch(`/api/send-group-invite-in-chat/${groupId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            'target_username': username,
+            'message': message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert(data.message);
+            $('#inviteUserModal').modal('hide');
+            document.getElementById('inviteUserForm').reset();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to send invitation');
+    });
+}
+
+// Auto-scroll to bottom on load
+window.addEventListener('load', scrollToBottom);
+</script>
+{% endblock %}

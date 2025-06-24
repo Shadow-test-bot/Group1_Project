@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile Photo Test</title>
+    <style>
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #007bff;
+        }
+        .user-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Profile Photo Test Page</h1>
+    
+    <h2>All Users and Their Profile Photos:</h2>
+    
+    {% for user in all_users %}
+    <div class="user-card">
+        <h3>{{ user.username }} ({{ user.get_full_name }})</h3>
+        
+        <div style="display: flex; align-items: center; gap: 10px;">
+            {% if user.profile.profile_pic %}
+                <img src="{{ user.profile.profile_pic.url }}" alt="Profile Picture" class="profile-icon">
+                <div>
+                    <p><strong>Has Profile Photo:</strong> YES</p>
+                    <p><strong>Photo URL:</strong> {{ user.profile.profile_pic.url }}</p>
+                    <p><strong>Photo Path:</strong> {{ user.profile.profile_pic }}</p>
+                </div>
+            {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=007bff&color=fff&size=40" alt="Avatar" class="profile-icon">
+                <div>
+                    <p><strong>Has Profile Photo:</strong> NO</p>
+                    <p><strong>Using Fallback Avatar</strong></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    
+    <hr>
+    
+    {% if request.user.is_authenticated %}
+        <h2>Current Logged In User:</h2>
+        <div class="user-card">
+            <h3>{{ request.user.username }} ({{ request.user.get_full_name }})</h3>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+                {% if request.user.profile.profile_pic %}
+                    <img src="{{ request.user.profile.profile_pic.url }}" alt="Profile Picture" class="profile-icon">
+                    <div>
+                        <p><strong>Has Profile Photo:</strong> YES</p>
+                        <p><strong>Photo URL:</strong> {{ request.user.profile.profile_pic.url }}</p>
+                    </div>
+                {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ request.user.get_full_name|default:request.user.username|urlencode }}&background=007bff&color=fff&size=40" alt="Avatar" class="profile-icon">
+                    <div>
+                        <p><strong>Has Profile Photo:</strong> NO</p>
+                        <p><strong>Using Fallback Avatar</strong></p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <p><a href="/login/">Login to see your profile photo</a></p>
+    {% endif %}
+</body>
+</html>

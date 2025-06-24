@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}My Friends{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users mr-2"></i>My Friends</h2>
+                <div>
+                    <a href="{% url 'find_friends' %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus mr-2"></i>Find Friends
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Friend Requests Section -->
+            {% if pending_requests %}
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="fas fa-clock mr-2"></i>Pending Friend Requests ({{ pending_count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% for request in pending_requests %}
+                    <div class="friend-request-item d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            {% if request.from_user.profile.profile_pic %}
+                                <img src="{{ request.from_user.profile.profile_pic.url }}" 
+                                     class="rounded-circle mr-3" width="50" height="50">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ request.from_user.username|urlencode }}&size=50&background=random&color=fff&bold=true"
+                                     class="rounded-circle mr-3" width="50" height="50">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0">{{ request.from_user.get_full_name|default:request.from_user.username }}</h6>
+                                <small class="text-muted">@{{ request.from_user.username }}</small>
+                                <p class="mb-0 text-muted small">{{ request.created_at|timesince }} ago</p>
+                                {% if request.message %}
+                                    <p class="mb-0 text-muted small">{{ request.message }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{% url 'respond_friend_request' request.id 'accept' %}" 
+                               class="btn btn-success btn-sm mr-2">
+                                <i class="fas fa-check"></i> Accept
+                            </a>
+                            <a href="{% url 'respond_friend_request' request.id 'decline' %}" 
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-times"></i> Decline
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Sent Requests Section -->
+            {% if sent_requests %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="fas fa-paper-plane mr-2"></i>Sent Friend Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% for request in sent_requests %}
+                    <div class="sent-request-item d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            {% if request.to_user.profile.profile_pic %}
+                                <img src="{{ request.to_user.profile.profile_pic.url }}" 
+                                     class="rounded-circle mr-3" width="50" height="50">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ request.to_user.username|urlencode }}&size=50&background=random&color=fff&bold=true"
+                                     class="rounded-circle mr-3" width="50" height="50">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-0">{{ request.to_user.get_full_name|default:request.to_user.username }}</h6>
+                                <small class="text-muted">@{{ request.to_user.username }}</small>
+                                <p class="mb-0 text-muted small">Sent {{ request.created_at|timesince }} ago</p>
+                                {% if request.message %}
+                                    <p class="mb-0 text-muted small">{{ request.message }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <span class="badge badge-secondary">Pending</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Friends List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-heart mr-2"></i>My Friends ({{ friend_count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if friends %}
+                        <div class="row">
+                            {% for friend in friends %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="friend-card card h-100">
+                                    <div class="card-body text-center">
+                                        {% if friend.profile.profile_pic %}
+                                            <img src="{{ friend.profile.profile_pic.url }}" 
+                                                 class="rounded-circle mb-3" width="80" height="80">
+                                        {% else %}
+                                            <img src="https://ui-avatars.com/api/?name={{ friend.username|urlencode }}&size=80&background=random&color=fff&bold=true"
+                                                 class="rounded-circle mb-3" width="80" height="80">
+                                        {% endif %}
+                                        <h6 class="card-title">{{ friend.get_full_name|default:friend.username }}</h6>
+                                        <p class="card-text text-muted">@{{ friend.username }}</p>
+                                        {% if friend.profile.bio %}
+                                            <p class="card-text small">{{ friend.profile.bio|truncatewords:10 }}</p>
+                                        {% endif %}
+                                        <div class="mt-3">
+                                            <a href="{% url 'chat' friend.username %}" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-comment mr-1"></i>Chat
+                                            </a>
+                                            <a href="{% url 'profile' %}?user={{ friend.username }}" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-user mr-1"></i>Profile
+                                            </a>
+                                            <form method="post" action="{% url 'remove_friend' friend.id %}" 
+                                                  class="d-inline" onsubmit="return confirm('Remove {{ friend.username }} from friends?')">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-user-minus mr-1"></i>Remove
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5>No friends yet</h5>
+                            <p class="text-muted">Start connecting with people by searching for users to add as friends.</p>
+                            <a href="{% url 'find_friends' %}" class="btn btn-primary">
+                                <i class="fas fa-search mr-2"></i>Find Friends
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.friend-card {
+    transition: transform 0.2s ease-in-out;
+    border: 1px solid #e3e6f0;
+}
+
+.friend-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.friend-request-item:last-child,
+.sent-request-item:last-child {
+    border-bottom: none !important;
+}
+
+.friend-request-item:hover,
+.sent-request-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

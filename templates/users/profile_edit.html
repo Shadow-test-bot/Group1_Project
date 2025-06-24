@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit"></i> Edit Profile
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Display messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Current Profile Picture -->
+                        <div class="row mb-4">
+                            <div class="col-md-4 text-center">
+                                <div class="current-photo">
+                                    {% if user.profile.profile_pic %}
+                                        <img src="{{ user.profile.profile_pic.url }}" alt="Current Profile Picture" 
+                                             class="rounded-circle mb-2" style="width: 120px; height: 120px; object-fit: cover;">
+                                        <br>
+                                        <a href="{% url 'delete_profile_picture' %}" class="btn btn-sm btn-danger" 
+                                           onclick="return confirm('Are you sure you want to delete your profile picture?')">
+                                            <i class="fas fa-trash"></i> Remove Photo
+                                        </a>
+                                    {% else %}
+                                        <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=007bff&color=fff&size=120" 
+                                             alt="Default Avatar" class="rounded-circle mb-2" style="width: 120px; height: 120px;">
+                                        <br>
+                                        <small class="text-muted">No photo uploaded</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="{{ profile_form.profile_pic.id_for_label }}">Profile Picture:</label>
+                                    {{ profile_form.profile_pic }}
+                                    <small class="form-text text-muted">
+                                        Choose a new profile picture. Accepted formats: JPG, PNG, GIF. Max size: 5MB.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Personal Information -->
+                        <h5 class="mb-3">Personal Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ user_form.first_name.id_for_label }}">First Name:</label>
+                                    {{ user_form.first_name }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ user_form.last_name.id_for_label }}">Last Name:</label>
+                                    {{ user_form.last_name }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ user_form.email.id_for_label }}">Email Address:</label>
+                            {{ user_form.email }}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ profile_form.bio.id_for_label }}">Bio:</label>
+                            {{ profile_form.bio }}
+                            <small class="form-text text-muted">Tell us about yourself in a few words.</small>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Contact Information -->
+                        <h5 class="mb-3">Contact Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ profile_form.phone_number.id_for_label }}">Phone Number:</label>
+                                    {{ profile_form.phone_number }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ profile_form.location.id_for_label }}">Location:</label>
+                                    {{ profile_form.location }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ profile_form.birth_date.id_for_label }}">Birth Date:</label>
+                                    {{ profile_form.birth_date }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ profile_form.website.id_for_label }}">Website:</label>
+                                    {{ profile_form.website }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Action Buttons -->
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-primary btn-lg mr-2">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{% url 'profile' %}" class="btn btn-secondary btn-lg mr-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <a href="{% url 'change_password' %}" class="btn btn-warning btn-lg">
+                                <i class="fas fa-key"></i> Change Password
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.form-control {
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+    border-radius: 0.375rem;
+}
+
+.btn-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1.125rem;
+}
+
+hr {
+    border-top: 1px solid #dee2e6;
+    margin: 1.5rem 0;
+}
+
+.current-photo {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.fa, .fas {
+    margin-right: 0.5rem;
+}
+</style>
+{% endblock %}

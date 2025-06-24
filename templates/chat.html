@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ room_name }}</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+    <!-- jQuery and Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </head>
+  <body style="height: 100vh; display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8f9fa;">
+    <style>
+      :root {
+        --primary-color: #4a6bff;
+        --primary-light: #eef1ff;
+        --secondary-color: #6c757d;
+        --light-gray: #f1f3f5;
+        --border-color: #e0e0e0;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --white: #ffffff;
+        --text-primary: #212529;
+        --text-secondary: #495057;
+      }
+
+      .chat-container {
+        flex: 1;
+        background-color: var(--white);
+      }
+
+      #chatbox {
+        background-color: var(--white);
+        border-radius: 8px;
+        margin: 10px;
+        overflow-y: auto;
+        height: calc(100vh - 200px);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border: 1px solid var(--border-color);
+      }
+
+      .chat-message {
+        border-radius: 12px;
+        padding: 12px 16px;
+        max-width: 75%;
+        word-wrap: break-word;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      .chat-message.sender {
+        background-color: var(--primary-light);
+        color: var(--text-primary);
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+      }
+
+      .chat-message.receiver {
+        background-color: var(--light-gray);
+        color: var(--text-primary);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+
+      .message-content {
+        padding: 0;
+      }
+
+      .chat-input {
+        background-color: var(--white);
+        border-top: 1px solid var(--border-color);
+        border-radius: 0;
+        padding: 16px;
+        margin: 0;
+      }
+
+      .chat-input input[type="text"] {
+        background-color: var(--white);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        border-radius: 20px;
+        padding: 10px 16px;
+        transition: all 0.3s ease;
+      }
+
+      .chat-input input[type="text"]:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.2);
+        outline: none;
+      }
+
+      .chat-input input[type="text"]::placeholder {
+        color: var(--secondary-color);
+      }
+
+      .chat-input button {
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        border: none;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .chat-input .btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+        margin-right: 8px;
+      }
+
+      .chat-input .btn-secondary:hover {
+        background-color: #5a6268;
+      }
+
+      .chat-input .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+      }
+
+      .chat-input .btn-primary:hover {
+        background-color: #3a56e0;
+      }
+
+      .sidebar {
+        background-color: var(--white);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .sidebar-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--white);
+      }
+
+      .sidebar-header h5 {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.1rem;
+      }
+
+      .contacts-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+      }
+
+      .contacts {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .contacts a {
+        background: transparent;
+        color: var(--text-primary);
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px 16px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+
+      .contacts a:hover {
+        background-color: var(--light-gray);
+        text-decoration: none;
+        color: var(--text-primary);
+      }
+
+      .contacts a.active {
+        background-color: var(--primary-light);
+        border-left: 3px solid var(--primary-color);
+      }
+
+      .profile-icon {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+      }
+
+      .timestamp {
+        color: var(--secondary-color) !important;
+        font-size: 0.75rem;
+      }
+
+      .last-msg {
+        color: var(--secondary-color) !important;
+        font-size: 0.85rem;
+      }
+
+      .logout {
+        padding: 16px;
+        background-color: var(--white);
+        border-top: 1px solid var(--border-color);
+      }
+
+      .chat-header {
+        background-color: var(--white);
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 0;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+      }
+
+      .chat-header img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+      }
+
+      .chat-header h3 {
+        color: var(--text-primary);
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .no-messages {
+        color: var(--secondary-color);
+        text-align: center;
+        margin-top: 40px;
+        font-style: italic;
+      }
+
+      .online-indicator {
+        width: 8px;
+        height: 8px;
+        background: var(--success-color);
+        border-radius: 50%;
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        border: 2px solid white;
+      }
+
+      .message-attachment img {
+        border-radius: 8px;
+        max-width: 100%;
+        margin-bottom: 8px;
+      }
+
+      .unread-badge {
+        background: var(--danger-color) !important;
+        color: white !important;
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        padding: 3px 6px !important;
+        border-radius: 12px !important;
+        min-width: 18px;
+        text-align: center;
+      }
+
+      @media (max-width: 768px) {
+        .col-3 {
+          position: fixed;
+          left: -100%;
+          width: 280px;
+          z-index: 1000;
+          transition: left 0.3s ease;
+        }
+        
+        .col-3.show {
+          left: 0;
+        }
+        
+        .col-9 {
+          width: 100%;
+        }
+      }
+    </style>
+
+    <div class="container-fluid h-100">
+      <div class="row h-100">
+        <!-- User List Sidebar -->
+        <div class="col-3 sidebar">
+          <div class="sidebar-header">
+            <h5><i class="fas fa-comments mr-2"></i>Chats</h5>
+          </div>
+          
+          <div class="contacts-container">
+            <div class="contacts">
+              {% for item in user_last_messages %}
+              <a
+                href="{% url 'chat' item.user.username %}"
+                class="{% if item.user.username == room_name %}active{% endif %}"
+                data-id="{{ room_name }}"
+                data-user-id="{{ item.user.id }}"
+              >
+                <div class="d-flex align-items-center">
+                  <div class="position-relative mr-3">
+                    {% if item.user.profile.profile_pic %}
+                      <img
+                        src="{{ item.user.profile.profile_pic.url }}"
+                        alt="{{ item.user.username }}'s Profile"
+                        class="profile-icon"
+                      />
+                    {% else %}
+                      <img
+                        src="https://ui-avatars.com/api/?name={{ item.user.username|urlencode }}&size=64&background=random&color=fff&bold=true"
+                        alt="{{ item.user.username }}'s Profile"
+                        class="profile-icon"
+                      />
+                    {% endif %}
+                    <div class="online-indicator"></div>
+                  </div>
+
+                  <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <strong class="text-truncate">{{ item.user.username }}</strong>
+                      <div class="d-flex align-items-center">
+                        {% if item.unread_count > 0 %}
+                          <span class="badge badge-danger unread-badge mr-2">{{ item.unread_count }}</span>
+                        {% else %}
+                          <span class="badge badge-danger unread-badge mr-2" style="display: none;"></span>
+                        {% endif %}
+                        {% if item.last_message %}
+                        <small class="timestamp">
+                          {{ item.last_message.timestamp|date:"H:i" }}
+                        </small>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <div>
+                      {% if item.last_message %}
+                      <small class="d-block text-truncate last-msg" id="last-message">
+                        {% if item.last_message.sender == request.user %}You: {% endif %}
+                        {{ item.last_message.content|truncatewords:4 }}
+                      </small>
+                      {% else %}
+                      <small class="last-msg">Start a conversation</small>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </a>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="logout">
+            <a href="{% url 'profile' %}" class="profile-link text-decoration-none">
+              <div class="d-flex align-items-center mb-3">
+                <div class="position-relative mr-3">
+                  {% if request.user.profile.profile_pic %}
+                    <img
+                      src="{{ request.user.profile.profile_pic.url }}"
+                      alt="{{ request.user.username }}'s Profile"
+                      class="profile-icon"
+                    />
+                  {% else %}
+                    <img
+                      src="https://ui-avatars.com/api/?name={{ request.user.username|urlencode }}&size=40&background=random&color=fff&bold=true"
+                      alt="{{ request.user.username }}'s Profile"
+                      class="profile-icon"
+                    />
+                  {% endif %}
+                </div>
+                <div>
+                  <h5 class="mb-0" style="font-size: 0.95rem;">
+                    {{ request.user.username|title }}
+                  </h5>
+                </div>
+              </div>
+            </a>
+            <div class="mb-2">
+              <a href="{% url 'group_list' %}" class="btn btn-outline-primary btn-block btn-sm">Group Chats</a>
+            </div>
+            <div>
+              <i class="fas fa-sign-out-alt mr-2" style="color: var(--danger-color)"></i>
+              <a href="{% url 'logout' %}" style="font-size: 0.9rem;">Sign out</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="col-9 d-flex flex-column chat" data-id="{{ room_name }}">
+          <!-- Chat Header -->
+          <div class="chat-header">
+            {% if other_user.profile.profile_pic %}
+                <img src="{{ other_user.profile.profile_pic.url }}" alt="Profile Picture" class="profile-icon">
+            {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ room_name|urlencode }}&size=64&background=random&color=fff&bold=true" alt="Default Avatar" class="profile-icon">
+            {% endif %}
+            <h3>{{ room_name }}</h3>
+
+            <div class="header-actions d-flex align-items-center ml-auto">
+              <button class="btn btn-outline-secondary btn-sm mr-2" onclick="showGroupInviteModal('{{ room_name }}')">
+                <i class="fas fa-user-plus mr-1"></i>Invite to Group
+              </button>
+              
+              <form method="GET" action="" class="ml-auto">
+                <input
+                  type="text"
+                  name="search"
+                  id="searchInput"
+                  class="form-control form-control-sm"
+                  placeholder="Search messages..."
+                  value="{{ search_query }}"
+                />
+              </form>
+            </div>
+          </div>
+
+          <!-- Chatbox -->
+          <div id="chatbox" class="chatbox flex-fill">
+            {% if chats %}
+              {% for message in chats %}
+              <div class="chat-message {% if message.sender == request.user %}sender{% else %}receiver{% endif %}">
+                <div class="d-flex {% if message.sender == request.user %}justify-content-end{% endif %} mb-2">
+                  {% if message.sender != request.user %}
+                  <div class="mr-2">
+                    {% if message.sender.profile.profile_pic %}
+                      <img
+                        src="{{ message.sender.profile.profile_pic.url }}"
+                        alt="{{ message.sender.username }}'s Profile"
+                        style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;"
+                      />
+                    {% else %}
+                      <img
+                        src="https://ui-avatars.com/api/?name={{ message.sender.username|urlencode }}&size=32&background=random&color=fff&bold=true"
+                        alt="{{ message.sender.username }}'s Profile"
+                        style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;"
+                      />
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                  
+                  <div class="{% if message.sender == request.user %}text-right{% endif %} flex-grow-1">
+                    <div class="message-content">
+                      {% if message.attachment %}
+                        <div class="message-attachment">
+                          {% if message.attachment.name|lower|slice:"-4:" == ".jpg" or message.attachment.name|lower|slice:"-5:" == ".jpeg" or message.attachment.name|lower|slice:"-4:" == ".png" or message.attachment.name|lower|slice:"-4:" == ".gif" or message.attachment.name|lower|slice:"-4:" == ".bmp" or message.attachment.name|lower|slice:"-5:" == ".webp" %}
+                            <img src="{{ message.attachment.url }}" alt="attachment" style="max-width:200px;max-height:200px;display:block;margin-bottom:8px;">
+                          {% else %}
+                            <a href="{{ message.attachment.url }}" target="_blank" download>
+                              <i class="fas fa-paperclip mr-2"></i>{{ message.attachment.name|default:"Download file" }}
+                            </a>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                      {% if message.content %}
+                        <div>{{ message.content }}</div>
+                      {% endif %}
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                      {% if message.sender != request.user %}{{ message.sender.username }} • {% endif %}
+                      {{ message.timestamp|date:"H:i" }}
+                    </small>
+                  </div>
+                  
+                  {% if message.sender == request.user %}
+                  <div class="ml-2">
+                    {% if message.sender.profile.profile_pic %}
+                      <img
+                        src="{{ message.sender.profile.profile_pic.url }}"
+                        alt="{{ message.sender.username }}'s Profile"
+                        style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;"
+                      />
+                    {% else %}
+                      <img
+                        src="https://ui-avatars.com/api/?name={{ message.sender.username|urlencode }}&size=32&background=random&color=fff&bold=true"
+                        alt="{{ message.sender.username }}'s Profile"
+                        style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;"
+                      />
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <p class="no-messages">No messages yet. Start the conversation!</p>
+            {% endif %}
+          </div>
+
+          <!-- Message Input -->
+          <div class="chat-input">
+            <form id="chat-form" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="input-group">
+                <input
+                  type="text"
+                  id="my_input"
+                  name="content"
+                  class="form-control"
+                  placeholder="Type your message..."
+                />
+                <input
+                  type="file"
+                  id="attachment_input"
+                  name="attachment"
+                  style="display: none"
+                />
+                <div class="input-group-append">
+                  <button
+                    id="attach_button"
+                    class="btn btn-secondary"
+                    type="button"
+                    title="Attach file"
+                  >
+                    <i class="fas fa-paperclip"></i>
+                  </button>
+                  <button
+                    id="submit_button"
+                    class="btn btn-primary"
+                    type="submit"
+                    title="Send message"
+                  >
+                    <i class="fas fa-paper-plane"></i>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{room_name|json_script:"room_slug"}}
+
+    <script>
+      const chatbox = document.querySelector("#chatbox");
+
+      function scrollToBottom() {
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+
+      scrollToBottom();
+
+      const roomName = JSON.parse(
+        document.getElementById("room_slug").textContent
+      );
+      const chatSocket = new WebSocket(
+        "ws://" + window.location.host + "/ws/chat/{{ room_name }}/"
+      );
+
+      chatSocket.onopen = function (e) {
+        console.log("Connected to chat!");
+      };
+      
+      chatSocket.onclose = function (e) {
+        console.log("Disconnected from chat");
+      };
+
+      document.querySelector("#my_input").focus();
+      document.querySelector("#my_input").onkeyup = function (e) {
+        if (e.keyCode == 13) {
+          e.preventDefault();
+          document.querySelector("#submit_button").click();
+        }
+      };
+
+      document.querySelector("#submit_button").onclick = function (e) {
+        e.preventDefault();
+        const messageInput = document.querySelector("#my_input").value.trim();
+        const fileInput = document.querySelector("#attachment_input");
+        const file = fileInput.files[0];
+
+        const payload = {
+            'message': messageInput,
+            'attachment': null
+        };
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const fileData = event.target.result.split(',')[1];
+                payload.attachment = {
+                    'name': file.name,
+                    'data': fileData
+                };
+                chatSocket.send(JSON.stringify(payload));
+            };
+            reader.readAsDataURL(file);
+        } else {
+            if (messageInput) {
+                chatSocket.send(JSON.stringify(payload));
+            }
+        }
+        document.querySelector("#my_input").value = "";
+        fileInput.value = "";
+        const attachButton = document.getElementById("attach_button");
+        attachButton.innerHTML = '<i class="fas fa-paperclip"></i>';
+        attachButton.title = 'Attach file';
+      };
+
+      chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        const chatbox = document.querySelector("#chatbox");
+        const noMessages = document.querySelector(".no-messages");
+        if (noMessages) {
+            noMessages.style.display = "none";
+        }
+
+        const div = document.createElement("div");
+        div.className = "chat-message " + (data.sender === "{{ request.user.username }}" ? "sender" : "receiver");
+
+        let contentHtml = "";
+        if (data.attachment) {
+            if (data.attachment.match(/\.(jpeg|jpg|gif|png|bmp|webp)$/i)) {
+                contentHtml += `<div class="message-attachment"><img src="${data.attachment}" alt="attachment" style="max-width:200px;max-height:200px;display:block;margin-bottom:8px;"></div>`;
+            } else {
+                contentHtml += `<div class="message-attachment"><a href="${data.attachment}" target="_blank" download><i class="fas fa-paperclip mr-2"></i>Download Attachment</a></div>`;
+            }
+        }
+        if (data.message) {
+            contentHtml += `<div>${data.message}</div>`;
+        }
+        div.innerHTML = contentHtml;
+        chatbox.appendChild(div);
+        scrollToBottom();
+
+        const lastMessage = document.querySelector(".active #last-message");
+        if (lastMessage) {
+            lastMessage.innerHTML = data.sender === "{{ request.user.username }}" ? "You: " + (data.message || 'Sent an attachment') : (data.message || 'Sent an attachment');
+            const timestamp = document.querySelector(".active .timestamp");
+            if (timestamp) {
+                const date = new Date();
+                timestamp.innerHTML = date.toTimeString().slice(0, 5);
+            }
+        }
+      };
+
+      document.getElementById("attach_button").onclick = function () {
+        document.getElementById("attachment_input").click();
+      };
+
+      document.getElementById("attachment_input").onchange = function (e) {
+        const file = e.target.files[0];
+        const attachButton = document.getElementById("attach_button");
+        
+        if (file) {
+          attachButton.innerHTML = '<i class="fas fa-paperclip"></i>';
+          attachButton.title = `${file.name} (${Math.round(file.size/1024)} KB)`;
+        } else {
+          attachButton.innerHTML = '<i class="fas fa-paperclip"></i>';
+          attachButton.title = 'Attach file';
+        }
+      };
+
+      document.getElementById("chat-form").onsubmit = function (e) {
+        e.preventDefault();
+      }
+
+      // Real-time unread badge updates
+      function updateUnreadBadges() {
+        fetch('/api/get-unread-counts/')
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              // Update user unread badges
+              Object.keys(data.unread_counts).forEach(userId => {
+                const badge = document.querySelector(`[data-user-id="${userId}"] .unread-badge`);
+                const count = data.unread_counts[userId];
+                
+                if (badge) {
+                  if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
+                  } else {
+                    badge.style.display = 'none';
+                  }
+                }
+              });
+
+              // Update group unread badges
+              Object.keys(data.group_unread_counts).forEach(groupId => {
+                const badge = document.querySelector(`[data-group-id="${groupId}"] .unread-badge`);
+                const count = data.group_unread_counts[groupId];
+                
+                if (badge) {
+                  if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
+                  } else {
+                    badge.style.display = 'none';
+                  }
+                }
+              });
+
+              // Clear badges for users not in the response
+              document.querySelectorAll('.contacts a:not(.active) .unread-badge').forEach(badge => {
+                const link = badge.closest('a');
+                const userId = link.getAttribute('data-user-id');
+                const groupId = link.getAttribute('data-group-id');
+                
+                if (userId && !data.unread_counts.hasOwnProperty(userId)) {
+                  badge.style.display = 'none';
+                }
+                
+                if (groupId && !data.group_unread_counts.hasOwnProperty(groupId)) {
+                  badge.style.display = 'none';
+                }
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching unread counts:', error);
+          });
+      }
+
+      // Update badges immediately and then every 3 seconds
+      updateUnreadBadges();
+      setInterval(updateUnreadBadges, 3000);
+
+      // Update badges when a new message is received
+      const originalOnMessage = chatSocket.onmessage;
+      chatSocket.onmessage = function(e) {
+        originalOnMessage(e);
+        // Update badges after a short delay to allow server processing
+        setTimeout(updateUnreadBadges, 500);
+      };
+
+      // Mark messages as read when chat is opened
+      function markCurrentChatAsRead() {
+        const roomName = "{{ room_name }}";
+        const activeChat = document.querySelector('.contacts a.active');
+        
+        if (activeChat) {
+          const userId = activeChat.getAttribute('data-user-id');
+          const groupId = activeChat.getAttribute('data-group-id');
+          
+          if (userId) {
+            // Mark user messages as read
+            fetch('/api/mark-all-messages-read/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+              },
+              body: JSON.stringify({
+                'sender_id': parseInt(userId)
+              })
+            }).then(response => response.json()).then(data => {
+              if (data.status === 'success') {
+                setTimeout(updateUnreadBadges, 500);
+              }
+            }).catch(error => {
+              console.error('Error marking messages as read:', error);
+            });
+          } else if (groupId) {
+            // Mark group messages as read
+            fetch(`/api/mark-group-messages-read/${groupId}/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+              },
+              body: JSON.stringify({
+                'group_id': parseInt(groupId)
+              })
+            }).then(response => response.json()).then(data => {
+              if (data.status === 'success') {
+                setTimeout(updateUnreadBadges, 500);
+              }
+            }).catch(error => {
+              console.error('Error marking group messages as read:', error);
+            });
+          }
+        }
+      }
+
+      // Mark messages as read when page loads
+      markCurrentChatAsRead();
+    </script>
+
+    <!-- Group Invite Modal -->
+    <div class="modal fade" id="groupInviteModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-users mr-2"></i>Invite <span id="inviteTargetUser"></span> to a Group
+            </h5>
+            <button type="button" class="close" data-dismiss="modal">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>Select a group to invite <strong><span id="inviteTargetUserBody"></span></strong> to:</p>
+            <div id="groupsList">
+              <!-- Groups will be loaded here -->
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Group invitation functionality
+      function showGroupInviteModal(username) {
+        document.getElementById('inviteTargetUser').textContent = username;
+        document.getElementById('inviteTargetUserBody').textContent = username;
+        
+        // Load user's groups
+        fetch('/api/get-user-groups/')
+          .then(response => response.json())
+          .then(data => {
+            const groupsList = document.getElementById('groupsList');
+            if (data.status === 'success' && data.groups.length > 0) {
+              let html = '<div class="list-group">';
+              data.groups.forEach(group => {
+                html += `
+                  <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                          onclick="inviteUserToGroup('${username}', ${group.id}, '${group.name}')">
+                    <div>
+                      <h6 class="mb-1">${group.name}</h6>
+                      <small class="text-muted">${group.member_count} members</small>
+                    </div>
+                    <i class="fas fa-paper-plane text-primary"></i>
+                  </button>
+                `;
+              });
+              html += '</div>';
+              groupsList.innerHTML = html;
+            } else {
+              groupsList.innerHTML = `
+                <div class="text-center py-4">
+                  <i class="fas fa-users fa-2x text-muted mb-3"></i>
+                  <p class="text-muted">You're not a member of any groups yet.</p>
+                  <a href="/groups/create/" class="btn btn-primary btn-sm">Create a Group</a>
+                </div>
+              `;
+            }
+          })
+          .catch(error => {
+            console.error('Error loading groups:', error);
+            document.getElementById('groupsList').innerHTML = '<div class="alert alert-danger">Failed to load groups</div>';
+          });
+        
+        $('#groupInviteModal').modal('show');
+      }
+      
+      function inviteUserToGroup(username, groupId, groupName) {
+        fetch(`/api/send-group-invite-in-chat/${groupId}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          },
+          body: JSON.stringify({
+            'target_username': username,
+            'message': `Hey! I'd like to invite you to join our group "${groupName}". It's a great place to chat with everyone!`
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            alert(`Invitation sent to ${username} for ${groupName}!`);
+            $('#groupInviteModal').modal('hide');
+          } else {
+            alert('Error: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Failed to send invitation');
+        });
+      }
+    </script>
+  </body>
+</html>
