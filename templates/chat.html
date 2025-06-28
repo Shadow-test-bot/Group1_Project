@@ -554,7 +554,9 @@
         document.getElementById("room_slug").textContent
       );
       const chatSocket = new WebSocket(
-        "ws://" + window.location.host + "/ws/chat/{{ room_name }}/"
+        (window.location.protocol === 'https:' ? 'wss://' : 'ws://') +
+        window.location.host +
+        "/ws/chat/{{ room_name }}/"
       );
 
       chatSocket.onopen = function (e) {

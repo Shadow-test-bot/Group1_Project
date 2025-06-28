@@ -20,17 +20,11 @@ from django.shortcuts import redirect
 ## Teacher: added import for static files serving in development
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth import views as auth_views
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('chat.urls')),
     path('users/', include('users.urls')),
-path('signup/', lambda request: redirect('/users/signup/', permanent=True)),
-    path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-    path('password_reset_done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    path('signup/', lambda request: redirect('/users/signup/', permanent=True)),
 ]
 ## Teacher: added static files serving in development
 if settings.DEBUG:

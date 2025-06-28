@@ -23,6 +23,21 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 import json
+import logging
+from django.contrib.auth import views as auth_views
+
+logger = logging.getLogger(__name__)
+
+class CustomPasswordResetView(auth_views.PasswordResetView):
+    def form_valid(self, form):
+        try:
+            response = super().form_valid(form)
+            logger.info(f"Password reset email sent to {form.cleaned_data['email']}")
+            return response
+        except Exception as e:
+            logger.error(f"Error sending password reset email: {e}", exc_info=True)
+            messages.error(self.request, "There was an error sending the password reset email. Please try again later.")
+            return redirect('password_reset')
 
 def home(request):
     """Home page view"""
