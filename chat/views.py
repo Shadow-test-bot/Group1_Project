@@ -1,5 +1,7 @@
 from datetime import datetime
 import json
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -663,6 +665,21 @@ def send_group_invite_in_chat(request, group_id):
             sender=request.user,
             receiver=target_user,
             content=invite_message
+        )
+        
+        # Get channel layer and send real-time message
+        channel_layer = get_channel_layer()
+        room_group_name = f"chat_{''.join(sorted([request.user.username, target_user.username]))}"
+
+        async_to_sync(channel_layer.group_send)(
+            room_group_name,
+            {
+                'type': 'chat_message',
+                'sender': request.user.username,
+                'receiver': target_user.username,
+                'message': invite_message,
+                'attachment': None
+            }
         )
         
         # Create invitation record

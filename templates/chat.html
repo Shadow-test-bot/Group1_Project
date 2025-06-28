@@ -629,7 +629,18 @@
             }
         }
         if (data.message) {
-            contentHtml += `<div>${data.message}</div>`;
+            let messageContent = data.message;
+            const inviteLinkRegex = /http[s]?:\/\/[^\s]+\/join-group\/([a-fA-F0-9-]+)\//;
+            const match = messageContent.match(inviteLinkRegex);
+
+            if (match) {
+                const inviteCode = match[1];
+                const joinUrl = `/join-group/${inviteCode}/`;
+                const buttonHtml = `<a href="${joinUrl}" class="btn btn-success btn-sm mt-2">Join Group</a>`;
+                messageContent = messageContent.replace(inviteLinkRegex, buttonHtml);
+            }
+            
+            contentHtml += `<div>${messageContent.replace(/\n/g, '<br>')}</div>`;
         }
         div.innerHTML = contentHtml;
         chatbox.appendChild(div);
